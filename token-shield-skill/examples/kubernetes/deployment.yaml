@@ -1,0 +1,219 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Example Kubernetes Deployment + Service + HPA
+# Intentionally verbose: lots of comments, default values, and repeated labels.
+# Run:  python scripts/compress.py examples/kubernetes/deployment.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Deployment definition for the payment-api microservice
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # Name of the deployment resource
+  name: payment-api
+  # Target namespace for all payment services
+  namespace: payments
+  labels:
+    app: payment-api
+    version: "2.4.1"
+    team: platform
+    environment: production
+  annotations:
+    # Deployment timestamp injected by CI/CD
+    deployment.kubernetes.io/revision: "14"
+    description: "Handles all inbound payment processing requests"
+spec:
+  # Number of pod replicas to maintain
+  replicas: 3
+  # Selector must match template labels exactly
+  selector:
+    matchLabels:
+      app: payment-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # Allow at most 1 extra pod during rollout
+      maxSurge: 1
+      # Keep at least 2 pods available during rollout
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: payment-api
+        version: "2.4.1"
+        team: platform
+        environment: production
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      # Use the payment-api service account for IRSA
+      serviceAccountName: payment-api-sa
+      # Do not automount the default service account token
+      automountServiceAccountToken: false
+      # Pull secrets for private registry
+      imagePullSecrets:
+        - name: ecr-pull-secret
+      # Security settings applied at the pod level
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 2000
+      containers:
+        - name: payment-api
+          image: 123456789.dkr.ecr.eu-west-1.amazonaws.com/payment-api:2.4.1
+          # Always pull from registry on every pod start
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          # Environment variables injected from ConfigMap and Secrets
+          env:
+            - name: APP_ENV
+              value: "production"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: payment-api-config
+                  key: database_host
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: payment-api-secrets
+                  key: database_password
+            - name: STRIPE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: payment-api-secrets
+                  key: stripe_api_key
+          # Resource requests and limits
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          # Liveness probe — restart pod if this fails
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          # Readiness probe — remove from service endpoints if this fails
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 1
+          # Startup probe — give the container time to initialise
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12
+          # Container-level security context
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          # Mount the tmp volume for writable scratch space
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: payment-api-config
+      # Graceful shutdown period
+      terminationGracePeriodSeconds: 60
+      # Prefer spreading pods across availability zones
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: payment-api
+                topologyKey: topology.kubernetes.io/zone
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Service definition
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-api
+  namespace: payments
+  labels:
+    app: payment-api
+    team: platform
+spec:
+  selector:
+    app: payment-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: ClusterIP
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Horizontal Pod Autoscaler
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: payment-api-hpa
+  namespace: payments
+  labels:
+    app: payment-api
+    team: platform
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: payment-api
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80

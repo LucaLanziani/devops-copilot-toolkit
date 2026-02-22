@@ -1,0 +1,35 @@
+{
+    "name": "Secure Terraform & Copilot",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/terraform:1": {
+            "version": "latest",
+            "tflint": "latest",
+            "terragrunt": "latest"
+        },
+        "ghcr.io/devcontainers/features/github-cli:1": {},
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "configureZshAsDefaultShell": true
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "GitHub.copilot",
+                "GitHub.copilot-chat",
+                "HashiCorp.terraform",
+                "bridgecrew.checkov",
+                "ms-python.python",
+                "editorconfig.editorconfig"
+            ],
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "zsh",
+                "python.defaultInterpreterPath": "/usr/bin/python3"
+            }
+        }
+    },
+    "remoteUser": "vscode",
+    "postCreateCommand": "chmod +x scripts/*.sh && ./scripts/install-hooks.sh ."
+}
