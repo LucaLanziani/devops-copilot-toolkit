@@ -16,6 +16,9 @@ examples/
 │   └── app.log                # payment-api log stream with circuit-breaker incident
 ├── json/
 │   └── service-config.json    # Runtime config with comments and nested defaults
+├── javascript/
+│   ├── payment-stack.ts       # AWS CDK TypeScript stack with heavy JSDoc (~350 lines)
+│   └── payment-api.js         # Node.js Express API with circuit breaker & JSDoc (~330 lines)
 ├── run_examples.sh            # Run all examples and write output to examples/output/
 └── README.md                  # This file
 ```
@@ -47,6 +50,9 @@ examples/
 │   └── service-config.json    # Runtime config with comments and nested defaults
 ├── markdown/
 │   └── adr-0042-circuit-breaker.md  # Architecture Decision Record with HTML comments
+├── javascript/
+│   ├── payment-stack.ts       # AWS CDK TypeScript stack with heavy JSDoc comments (~350 lines)
+│   └── payment-api.js         # Node.js Express API with circuit breaker & JSDoc (~330 lines)
 ├── run_examples.sh            # Run all examples and write output to examples/output/
 └── README.md                  # This file
 ```
@@ -133,6 +139,42 @@ What happens:
 - Trailing whitespace removed from every line
 
 Expected savings: **~14% tokens** (1,725 → 1,479) — prose compresses less than structured data, but HTML comments can be substantial in long docs
+
+---
+
+### TypeScript / JavaScript file
+
+```bash
+python scripts/compress.py examples/javascript/payment-stack.ts
+```
+
+What happens:
+- Block comments (`/* … */` and `/** @fileoverview … */` JSDoc blocks) stripped entirely
+- Inline `//` comments removed — URL literals (`https://…`) are preserved unharmed
+- Consecutive blank lines collapsed to a single blank line
+- Duplicate import patterns and repeated tag-object blocks deduplicated
+
+> **Note:** TOON abbreviation is intentionally skipped for JS/TS — renaming
+> identifiers with regex is unsafe and would break the code. Savings come from
+> comment removal alone, which is still substantial in well-documented CDK stacks.
+
+Expected savings: **~43% tokens** (6,274 → 3,604)
+
+---
+
+### Node.js file
+
+```bash
+python scripts/compress.py examples/javascript/payment-api.js
+```
+
+What happens:
+- `/** … */` JSDoc blocks (route docs, helper docs, config comments) stripped entirely
+- `// …` inline comments removed — `https://` URLs inside string literals are unaffected
+- Consecutive blank lines collapsed to a single blank line
+- Duplicate error-handling patterns and repeated `req.log` / `metrics` call blocks deduplicated
+
+Expected savings: **~46% tokens** (4,423 → 2,392)
 
 ---
 

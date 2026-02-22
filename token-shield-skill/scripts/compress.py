@@ -111,7 +111,7 @@ def compress(
 
     # Step 4: Dedup — always as a final pass, except Markdown where blank lines
     # are structural paragraph separators and must not be collapsed.
-    if "dedup" not in skip and config_fmt != "md":
+    if "dedup" not in skip and config_fmt not in ("md",):
         result, dedup_stats = deduplicate_lines(result, annotate=True)
         stats["steps_applied"].append("dedup")
         stats["dedup"] = dedup_stats
@@ -183,7 +183,7 @@ examples:
     parser.add_argument(
         "--format", "-f",
         default="auto",
-        choices=["auto", "yaml", "json", "hcl", "md", "log"],
+        choices=["auto", "yaml", "json", "hcl", "md", "js", "log"],
         help="Input format (default: auto-detect).",
     )
     parser.add_argument(

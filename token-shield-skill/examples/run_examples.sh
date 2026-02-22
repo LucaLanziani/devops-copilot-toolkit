@@ -75,6 +75,18 @@ run_example \
   "$SCRIPT_DIR/markdown/adr-0042-circuit-breaker.md" \
   "$OUTPUT_DIR/adr-0042.compressed.md"
 
+# ─── Example 6: TypeScript / CDK stack ─────────────────────────────────────────
+run_example \
+  "TypeScript AWS CDK Stack" \
+  "$SCRIPT_DIR/javascript/payment-stack.ts" \
+  "$OUTPUT_DIR/payment-stack.compressed.ts"
+
+# ─── Example 7: Node.js Express API ──────────────────────────────────────────
+run_example \
+  "Node.js Express Payment API" \
+  "$SCRIPT_DIR/javascript/payment-api.js" \
+  "$OUTPUT_DIR/payment-api.compressed.js"
+
 separator
 echo -e "\n${BOLD}All examples complete.${RESET}"
 echo -e "Compressed outputs written to: ${CYAN}$OUTPUT_DIR/${RESET}\n"

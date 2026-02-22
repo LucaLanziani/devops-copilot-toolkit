@@ -1,5 +1,5 @@
 """
-minify_config.py — Strip comments and whitespace from YAML, JSON, HCL, and Markdown.
+minify_config.py — Strip comments and whitespace from YAML, JSON, HCL, Markdown, and JS/TS.
 
 For YAML/JSON the file is round-tripped through the parser so comments are
 removed structurally and output uses compact separators.
@@ -67,6 +67,33 @@ def minify_hcl(text: str) -> str:
     return "\n".join(lines)
 
 
+def minify_js(text: str) -> str:
+    """
+    Best-effort JS/TS minifier (comment removal + whitespace collapse).
+    Removes:
+      - JSDoc /** ... */ and regular /* ... */ block comments
+      - // line comments (negative lookbehind skips :// URLs)
+    Does NOT rename variables or alter string literals — unsafe with regex.
+    Safe for: CDK stacks, Pulumi programs, webpack/vite configs, test files.
+    """
+    # Remove block comments (/** ... */ and /* ... */)
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
+    # Remove // line comments — preserve :// (URLs inside strings)
+    text = re.sub(r"(?<!:)//.*$", "", text, flags=re.MULTILINE)
+    # Strip trailing whitespace
+    lines = [ln.rstrip() for ln in text.splitlines()]
+    # Collapse consecutive blank lines to one
+    result: list[str] = []
+    prev_blank = False
+    for ln in lines:
+        is_blank = not ln.strip()
+        if is_blank and prev_blank:
+            continue
+        result.append(ln)
+        prev_blank = is_blank
+    return "\n".join(result).strip()
+
+
 def minify_markdown(text: str) -> str:
     """
     Reduce markdown size:
@@ -99,6 +126,9 @@ EXTENSION_MAP = {
     ".json": "json",
     ".tf":   "hcl",  ".hcl": "hcl",
     ".md":   "md",   ".markdown": "md",
+    ".js":   "js",   ".jsx": "js",
+    ".ts":   "js",   ".tsx": "js",
+    ".mjs":  "js",   ".cjs": "js",
 }
 
 MINIFIERS = {
@@ -106,6 +136,7 @@ MINIFIERS = {
     "json": minify_json,
     "hcl":  minify_hcl,
     "md":   minify_markdown,
+    "js":   minify_js,
 }
 
 
@@ -139,7 +170,7 @@ def _cli() -> None:
     parser.add_argument(
         "--format", "-f",
         default="auto",
-        choices=["auto", "yaml", "json", "hcl", "md"],
+        choices=["auto", "yaml", "json", "hcl", "md", "js"],
         help="Input format (default: auto-detect from extension).",
     )
     parser.add_argument(
