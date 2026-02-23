@@ -94,26 +94,77 @@ def minify_js(text: str) -> str:
     return "\n".join(result).strip()
 
 
+def _compact_table_row(ln: str) -> str:
+    """Strip whitespace padding inside pipe-table cells: | col1  | col2 | → |col1|col2|"""
+    cells = ln.split("|")
+    inner = [c.strip() for c in cells[1:-1]]
+    return "|" + "|".join(inner) + "|"
+
+
 def minify_markdown(text: str) -> str:
     """
     Reduce markdown size:
       - Remove HTML comments
-      - Strip link titles
+      - Strip link titles (tooltip text) from inline links
       - Collapse multiple blank lines to one
       - Remove trailing whitespace
+      - Remove standalone horizontal rules (---, ***, ___)
+      - Strip code-fence language hints (```python → ```)
+      - Compact pipe-table column padding
+      - Collapse multiple inline spaces to one (outside code blocks)
     """
+    # Remove HTML comments
     text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+    # Strip inline link title attributes: [text](url "title") → [text](url)
     text = re.sub(r"(\[.*?\]\(.*?)\s+\"[^\"]*\"(\))", r"\1\2", text)
+
     lines = [ln.rstrip() for ln in text.splitlines()]
-    # Collapse consecutive blank lines
     result: list[str] = []
+    in_code_block = False
     prev_blank = False
+
     for ln in lines:
+        # Track fenced code blocks (``` or ~~~)
+        fence_match = re.match(r"^(`{3,}|~{3,})", ln)
+        if fence_match:
+            if not in_code_block:
+                in_code_block = True
+                # Strip language hint: ```python → ```
+                ln = re.sub(r"^(`{3,}|~{3,})\w+\S*", lambda m: m.group(1), ln)
+            else:
+                in_code_block = False
+            result.append(ln)
+            prev_blank = False
+            continue
+
+        if in_code_block:
+            result.append(ln)
+            prev_blank = False
+            continue
+
+        # Collapse consecutive blank lines
         is_blank = not ln.strip()
         if is_blank and prev_blank:
             continue
-        result.append(ln)
         prev_blank = is_blank
+
+        if is_blank:
+            result.append(ln)
+            continue
+
+        # Remove standalone horizontal rules
+        if re.match(r"^\s*(-{3,}|\*{3,}|_{3,})\s*$", ln):
+            continue
+
+        # Compact pipe-table rows
+        if "|" in ln and re.match(r"^\s*\|", ln):
+            ln = _compact_table_row(ln)
+        else:
+            # Collapse multiple inline spaces to one (prose lines only)
+            ln = re.sub(r"  +", " ", ln)
+
+        result.append(ln)
+
     return "\n".join(result).strip()
 
 

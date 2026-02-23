@@ -109,10 +109,12 @@ def compress(
         stats["distill"] = distill_stats
     stats["per_step_chars"]["after_distill"] = len(result)
 
-    # Step 4: Dedup — always as a final pass, except Markdown where blank lines
-    # are structural paragraph separators and must not be collapsed.
-    if "dedup" not in skip and config_fmt not in ("md",):
-        result, dedup_stats = deduplicate_lines(result, annotate=True)
+    # Step 4: Dedup — always as a final pass.
+    # For Markdown, disable annotations (no [×N] noise in prose) and preserve
+    # blank lines normally — consecutive blanks are already collapsed by minify.
+    if "dedup" not in skip:
+        md_mode = config_fmt == "md"
+        result, dedup_stats = deduplicate_lines(result, annotate=not md_mode)
         stats["steps_applied"].append("dedup")
         stats["dedup"] = dedup_stats
     stats["per_step_chars"]["after_dedup"] = len(result)
