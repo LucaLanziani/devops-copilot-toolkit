@@ -7,6 +7,7 @@ A collection of Copilot agents, prompt instructions, and AI-powered automations.
 ```
 copilot-toolkit/
 ├── agents/          # Copilot agents
+├── finops-skill/    # FinOps skill and examples
 ├── prompts/         # Reusable prompt instructions
 ├── hooks/           # AI-powered git hooks
 └── scripts/         # Utility scripts
@@ -38,3 +39,7 @@ See individual agent READMEs in `agents/<agent-name>/` for setup instructions.
 1. Create a new folder under the appropriate category
 2. Include a README.md with usage instructions
 3. Test your addition before committing
+
+## Support
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-FFDD00?logo=buymeacoffee&logoColor=000000)](https://www.buymeacoffee.com/klaus82)
