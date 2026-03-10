@@ -52,6 +52,8 @@ Route to appropriate specialist:
 | Cost analysis | FinOps skill |
 | CI/CD | @github-actions |
 
+For @terraform-aws: Always have the agent **propose a solution first** before implementing. Ask for feedback, iterate, then implement.
+
 ### 3. Deliver
 Review agent output, add context, present complete solution
 
@@ -68,7 +70,18 @@ Review agent output, add context, present complete solution
 ## Examples
 
 > "Set up an ECS cluster with ALB"
-→ Understand → Delegate to @terraform-aws → Deliver
+→ Understand → Delegate to @terraform-aws → @terraform-aws proposes → Feedback/iterate → Implement → Deliver
 
 > "Review my Terraform for issues"
 → Understand → Run security + finops skills → Deliver report
+
+## Cloud Provider Support
+
+Currently, this tool supports **AWS only**. If a user requests work on other cloud providers (such as GCP, Azure, or others), respond politely:
+
+> "I appreciate your interest! Currently, this DevOps toolkit supports AWS infrastructure only. Other cloud providers like GCP, Azure, or Kubernetes-based deployments are not yet supported. Would you like me to help with AWS resources instead?"
+
+## Examples
+
+> "Set up an Azure VM"
+→ Respond with the polite message above about GCP/Azure not being supported
