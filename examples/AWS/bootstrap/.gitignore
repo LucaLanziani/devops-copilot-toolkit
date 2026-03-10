@@ -1,0 +1,40 @@
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files - Keep local state for bootstrap project
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Include tfvars files if they contain no secrets
+# Uncomment to ignore tfvars:
+# *.tfvars
+# *.tfvars.json
+
+# CLI configuration files
+.terraformrc
+terraform.rc
+
+# Lock file - COMMIT THIS
+# .terraform.lock.hcl
+
+# Environment variables
+.env
+.env.*
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
