@@ -1,0 +1,181 @@
+{
+  "version": 4,
+  "terraform_version": "1.5.0",
+  "serial": 1,
+  "lineage": "simulated-lineage-uuid",
+  "outputs": {
+    "ec2_instance_id": {
+      "value": "i-sim-001",
+      "type": "string"
+    },
+    "elasticache_cluster_id": {
+      "value": "ai-tf-redis",
+      "type": "string"
+    },
+    "security_group_ids": {
+      "value": {
+        "ec2_sg": "sg-sim-ec2-001",
+        "elasticache_sg": "sg-sim-cache-001"
+      },
+      "type": [
+        "object",
+        {
+          "ec2_sg": "string",
+          "elasticache_sg": "string"
+        }
+      ]
+    }
+  },
+  "resources": [
+    {
+      "module": "module.security_groups",
+      "type": "aws_security_group",
+      "name": "ec2",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "id": "sg-sim-ec2-001",
+            "name": "ai-tf-ec2-sg",
+            "description": "EC2 security group",
+            "vpc_id": "my-vpc-id",
+            "ingress": [
+              {
+                "description": "SSH",
+                "from_port": 22,
+                "to_port": 22,
+                "protocol": "tcp",
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ],
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "security_groups": [],
+                "self": false
+              }
+            ],
+            "egress": [
+              {
+                "from_port": 0,
+                "to_port": 0,
+                "protocol": "-1",
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ],
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "security_groups": [],
+                "self": false
+              }
+            ],
+            "tags": null
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.security_groups",
+      "type": "aws_security_group",
+      "name": "elasticache",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "id": "sg-sim-cache-001",
+            "name": "ai-tf-elasticache-sg",
+            "description": "ElastiCache security group",
+            "vpc_id": "my-vpc-id",
+            "ingress": [],
+            "egress": [
+              {
+                "from_port": 0,
+                "to_port": 0,
+                "protocol": "-1",
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ],
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "security_groups": [],
+                "self": false
+              }
+            ],
+            "tags": null
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.elasticache",
+      "type": "aws_elasticache_subnet_group",
+      "name": "this",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "ai-tf-elasticache-subnets",
+            "name": "ai-tf-elasticache-subnets",
+            "description": "Managed by Terraform",
+            "subnet_ids": [
+              "my-private-subnet-id-1",
+              "my-private-subnet-id-2"
+            ],
+            "tags": null
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.ec2",
+      "type": "aws_instance",
+      "name": "this",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "id": "i-sim-001",
+            "ami": "ami-0abcdef1234567890",
+            "instance_type": "t3.micro",
+            "subnet_id": "my-private-subnet-id-1",
+            "vpc_security_group_ids": [
+              "sg-sim-ec2-001"
+            ],
+            "tags": {
+              "Name": "ai-tf-ec2"
+            },
+            "private_ip": "10.0.1.100",
+            "public_ip": ""
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.elasticache",
+      "type": "aws_elasticache_cluster",
+      "name": "this",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "id": "ai-tf-redis",
+            "cluster_id": "ai-tf-redis",
+            "engine": "redis",
+            "node_type": "cache.t3.micro",
+            "num_cache_nodes": 1,
+            "port": 6379,
+            "subnet_group_name": "ai-tf-elasticache-subnets",
+            "security_group_ids": [
+              "sg-sim-cache-001"
+            ],
+            "tags": null
+          }
+        }
+      ]
+    }
+  ]
+}
